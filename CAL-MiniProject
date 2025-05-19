@@ -1,0 +1,157 @@
+package com.mentee.model;
+
+public class Mentee {
+    private int id;
+    private String name;
+    private String department;
+    private int semester;
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
+
+    public int getSemester() { return semester; }
+    public void setSemester(int semester) { this.semester = semester; }
+}
+package com.mentee.dao;
+
+import com.mentee.model.Mentee;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MenteeDAO {
+    private List<Mentee> menteeList = new ArrayList<>();
+
+    public void addMentee(Mentee mentee) {
+        menteeList.add(mentee);
+    }
+
+    public List<Mentee> getMenteeList() {
+        return menteeList;
+    }
+
+    public Mentee getMenteeById(int id) {
+        for (Mentee mentee : menteeList) {
+            if (mentee.getId() == id) return mentee;
+        }
+        return null;
+    }
+}
+package com.mentee.controller;
+
+import com.mentee.dao.MenteeDAO;
+import com.mentee.model.Mentee;
+
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.IOException;
+
+public class MenteeController extends HttpServlet {
+    private MenteeDAO menteeDAO;
+
+    @Override
+    public void init() {
+        menteeDAO = new MenteeDAO();
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String name = request.getParameter("name");
+        String department = request.getParameter("department");
+        int semester = Integer.parseInt(request.getParameter("semester"));
+
+        Mentee mentee = new Mentee();
+        mentee.setName(name);
+        mentee.setDepartment(department);
+        mentee.setSemester(semester);
+
+        menteeDAO.addMentee(mentee);
+        response.sendRedirect("menteeList.jsp");
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.setAttribute("menteeList", menteeDAO.getMenteeList());
+        RequestDispatcher dispatcher = request.getRequestDispatcher("menteeList.jsp");
+        dispatcher.forward(request, response);
+    }
+}
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+
+    <servlet>
+        <servlet-name>MenteeController</servlet-name>
+        <servlet-class>com.mentee.controller.MenteeController</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>MenteeController</servlet-name>
+        <url-pattern>/MenteeController</url-pattern>
+    </servlet-mapping>
+</web-app>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mentee Record Management</title>
+</head>
+<body>
+    <h1>Welcome to the Mentee Record Management System</h1>
+    <a href="addMentee.jsp">Add New Mentee</a><br>
+    <a href="MenteeController">View Mentee List</a>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Mentee</title>
+</head>
+<body>
+    <h2>Add New Mentee</h2>
+    <form action="MenteeController" method="post">
+        Name: <input type="text" name="name" required><br>
+        Department: <input type="text" name="department" required><br>
+        Semester: <input type="number" name="semester" required><br>
+        <input type="submit" value="Add Mentee">
+    </form>
+    <br>
+    <a href="index.jsp">Back to Home</a>
+</body>
+</html>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mentee List</title>
+</head>
+<body>
+    <h2>Mentee List</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Semester</th>
+            </tr>
+        </thead>
+        <tbody>
+            <c:forEach var="mentee" items="${menteeList}">
+                <tr>
+                    <td>${mentee.id}</td>
+                    <td>${mentee.name}</td>
+                    <td>${mentee.department}</td>
+                    <td>${mentee.semester}</td>
+                </tr>
+            </c:forEach>
+        </tbody>
+    </table>
+    <br>
+    <a href="index.jsp">Back to Home</a>
+</body>
+</html>
+
