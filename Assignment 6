@@ -1,0 +1,405 @@
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.sql.*;
+
+public class UserServlet extends HttpServlet {
+    private static final String JDBC_URL = "jdbc:mysql://localhost:3306/testdb";
+    private static final String JDBC_USER = "root";
+    private static final String JDBC_PASS = "password";
+
+    private Connection connect() throws SQLException {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("MySQL JDBC Driver not found");
+        }
+        return DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASS);
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String action = request.getParameter("action");
+        PrintWriter out = response.getWriter();
+        response.setContentType("text/html");
+
+        try (Connection conn = connect()) {
+            switch (action) {
+                case "create":
+                    String name = request.getParameter("name");
+                    String email = request.getParameter("email");
+                    PreparedStatement psCreate = conn.prepareStatement("INSERT INTO users(name, email) VALUES(?, ?)");
+                    psCreate.setString(1, name);
+                    psCreate.setString(2, email);
+                    psCreate.executeUpdate();
+                    out.println("User added successfully!");
+                    break;
+
+                case "read":
+                    Statement stmt = conn.createStatement();
+                    ResultSet rs = stmt.executeQuery("SELECT * FROM users");
+                    out.println("<h3>Users:</h3>");
+                    while (rs.next()) {
+                        out.println("ID: " + rs.getInt("id") + ", Name: " + rs.getString("name") + ", Email: " + rs.getString("email") + "<br>");
+                    }
+                    break;
+
+                case "update":
+                    int uid = Integer.parseInt(request.getParameter("id"));
+                    String newName = request.getParameter("name");
+                    String newEmail = request.getParameter("email");
+                    PreparedStatement psUpdate = conn.prepareStatement("UPDATE users SET name=?, email=? WHERE id=?");
+                    psUpdate.setString(1, newName);
+                    psUpdate.setString(2, newEmail);
+                    psUpdate.setInt(3, uid);
+                    psUpdate.executeUpdate();
+                    out.println("User updated successfully!");
+                    break;
+
+                case "delete":
+                    int delId = Integer.parseInt(request.getParameter("id"));
+                    PreparedStatement psDelete = conn.prepareStatement("DELETE FROM users WHERE id=?");
+                    psDelete.setInt(1, delId);
+                    psDelete.executeUpdate();
+                    out.println("User deleted successfully!");
+                    break;
+
+                default:
+                    out.println("Invalid action. Use action=create/read/update/delete.");
+            }
+        } catch (Exception e) {
+            out.println("Error: " + e.getMessage());
+        }
+    }
+}
+[19/05, 2:20 pm] Ragini More: import java.io.*;
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.sql.*;
+
+public class CourierServlet extends HttpServlet {
+    private static final String JDBC_URL = "jdbc:mysql://localhost:3306/courierdb";
+    private static final String JDBC_USER = "root";
+    private static final String JDBC_PASS = "password";
+
+    private Connection getConnection() throws SQLException {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("JDBC Driver not found.");
+        }
+        return DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASS);
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String action = request.getParameter("action");
+        PrintWriter out = response.getWriter();
+        response.setContentType("text/html");
+
+        try (Connection conn = getConnection()) {
+            if ("create".equalsIgnoreCase(action)) {
+                String trackingNumber = request.getParameter("tracking_number");
+                String sender = request.getParameter("sender");
+                String receiver = request.getParameter("receiver");
+                String status = request.getParameter("status");
+
+                PreparedStatement ps = conn.prepareStatement("INSERT INTO couriers (tracking_number, sender, receiver, status) VALUES (?, ?, ?, ?)");
+                ps.setString(1, trackingNumber);
+                ps.setString(2, sender);
+                ps.setString(3, receiver);
+                ps.setString(4, status);
+                ps.executeUpdate();
+
+                out.println("Courier record created successfully.");
+
+            } else if ("read".equalsIgnoreCase(action)) {
+                String trackingNumber = request.getParameter("tracking_number");
+
+                PreparedStatement ps = conn.prepareStatement("SELECT * FROM couriers WHERE tracking_number = ?");
+                ps.setString(1, trackingNumber);
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    out.println("<h3>Tracking Info:</h3>");
+                    out.println("Tracking Number: " + rs.getString("tracking_number") + "<br>");
+                    out.println("Sender: " + rs.getString("sender") + "<br>");
+                    out.println("Receiver: " + rs.getString("receiver") + "<br>");
+                    out.println("Status: " + rs.getString("status") + "<br>");
+                } else {
+                    out.println("No courier found with this tracking number.");
+                }
+
+            } else if ("update".equalsIgnoreCase(action)) {
+                String trackingNumber = request.getParameter("tracking_number");
+                String status = request.getParameter("status");
+
+                PreparedStatement ps = conn.prepareStatement("UPDATE couriers SET status = ? WHERE tracking_number = ?");
+                ps.setString(1, status);
+                ps.setString(2, trackingNumber);
+                int updated = ps.executeUpdate();
+
+                if (updated > 0) {
+                    out.println("Courier status updated.");
+                } else {
+                    out.println("No matching courier found.");
+                }
+
+            } else if ("delete".equalsIgnoreCase(action)) {
+                String trackingNumber = request.getParameter("tracking_number");
+
+                PreparedStatement ps = conn.prepareStatement("DELETE FROM couriers WHERE tracking_number = ?");
+                ps.setString(1, trackingNumber);
+                int deleted = ps.executeUpdate();
+
+                if (deleted > 0) {
+                    out.println("Courier deleted successfully.");
+                } else {
+                    out.println("No courier found with this tracking number.");
+                }
+
+            } else {
+                out.println("Invalid action. Use action=create/read/update/delete.");
+            }
+
+        } catch (SQLException e) {
+            out.println("Error: " + e.getMessage());
+        }
+    }
+
+
+
+
+
+  /*CREATE TABLE couriers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tracking_number VARCHAR(100) NOT NULL,
+    sender VARCHAR(100),
+    receiver VARCHAR(100),
+    status VARCHAR(50)
+);
+*/
+[19/05, 2:20 pm] Ragini More: import jakarta.persistence.*;
+
+@Entity
+@Table(name = "couriers")
+public class Courier {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    private String trackingNumber;
+    private String sender;
+    private String receiver;
+    private String status;
+
+    // Getters and Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public String getTrackingNumber() { return trackingNumber; }
+    public void setTrackingNumber(String trackingNumber) { this.trackingNumber = trackingNumber; }
+
+    public String getSender() { return sender; }
+    public void setSender(String sender) { this.sender = sender; }
+-
+
+    public String getReceiver() { return receiver; }
+    public void setReceiver(String receiver) { this.receiver = receiver; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    @Override
+    public String toString() {
+        return "[" + id + "] " + trackingNumber + " | " + sender + " → " + receiver + " [" + status + "]";
+    }
+}
+--------------------------------------------DAO-------------------------
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import java.util.List;
+
+public class CourierDAO {
+
+    public void saveCourier(Courier courier) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            session.persist(courier);
+            tx.commit();
+        }
+    }
+
+    public List<Courier> getAllCouriers() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("FROM Courier", Courier.class).list();
+        }
+    }
+
+    public Courier getCourierById(int id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.get(Courier.class, id);
+        }
+    }
+
+    public void updateCourier(Courier updatedCourier) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            session.merge(updatedCourier);
+            tx.commit();
+        }
+    }
+
+    public void deleteCourier(int id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            Courier c = session.get(Courier.class, id);
+            if (c != null) session.remove(c);
+            tx.commit();
+        }
+    }
+}
+
+-------------------------------------------UTIL----------------------------------------
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+
+public class HibernateUtil {
+    private static final SessionFactory sessionFactory;
+
+    static {
+        try {
+            sessionFactory = new Configuration().configure("hibernate.cfg.xml")
+                    .addAnnotatedClass(Courier.class)
+                    .buildSessionFactory();
+        } catch (Throwable ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
+
+    public static SessionFactory getSessionFactory() {
+        return sessionFactory;
+    }
+}
+
+---------------------------------------config.xml-----------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC 
+    "-//Hibernate/Hibernate Configuration DTD 3.0//EN" 
+    "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+  <session-factory>
+    <!-- DB Connection -->
+    <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+    <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/courierdb</property>
+    <property name="hibernate.connection.username">root</property>
+    <property name="hibernate.connection.password">yourpassword</property>
+
+    <!-- Hibernate Properties -->
+    <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+    <property name="hibernate.hbm2ddl.auto">update</property>
+    <property name="show_sql">true</property>
+  </session-factory>
+</hibernate-configuration>
+[19/05, 2:21 pm] Ragini More: CREATE TABLE couriers (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  trackingNumber VARCHAR(100),
+  sender VARCHAR(100),
+  receiver VARCHAR(100),
+  status VARCHAR(50)
+);
+ database 
+import javax.persistence.*;
+
+@Entity
+@Table(name = "couriers")
+public class Courier {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    private String trackingNumber;
+    private String sender;
+    private String receiver;
+    private String status;
+
+    // Getters and Setters
+    public int getId() { return id; }
+    public String getTrackingNumber() { return trackingNumber; }
+    public void setTrackingNumber(String trackingNumber) { this.trackingNumber = trackingNumber; }
+    public String getSender() { return sender; }
+    public void setSender(String sender) { this.sender = sender; }
+    public String getReceiver() { return receiver; }
+    public void setReceiver(String receiver) { this.receiver = receiver; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+}
+
+Entity cclass
+import org.hibernate.*;
+import org.hibernate.cfg.Configuration;
+
+public class CourierDAO {
+    private SessionFactory factory;
+
+    public CourierDAO() {
+        factory = new Configuration().configure().addAnnotatedClass(Courier.class).buildSessionFactory();
+    }
+
+    public void createCourier(Courier courier) {
+        Session session = factory.openSession();
+        Transaction tx = session.beginTransaction();
+        session.save(courier);
+        tx.commit();
+        session.close();
+    }
+
+    public Courier getCourierById(int id) {
+        Session session = factory.openSession();
+        Courier courier = session.get(Courier.class, id);
+        session.close();
+        return courier;
+    }
+
+    public void updateStatus(int id, String newStatus) {
+        Session session = factory.openSession();
+        Transaction tx = session.beginTransaction();
+        Courier courier = session.get(Courier.class, id);
+        if (courier != null) {
+            courier.setStatus(newStatus);
+            session.update(courier);
+        }
+        tx.commit();
+        session.close();
+    }
+
+    public void deleteCourier(int id) {
+        Session session = factory.openSession();
+        Transaction tx = session.beginTransaction();
+        Courier courier = session.get(Courier.class, id);
+        if (courier != null) {
+            session.delete(courier);
+        }
+        tx.commit();
+        session.close();
+    }
+
+    public void close() {
+        factory.close();
+    }
+}
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 5.3//EN"
+        "http://hibernate.sourceforge.net/hibernate-configuration-5.3.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/courierdb</property>
+        <property name="hibernate.connection.username">root</property>
+        <property name="hibernate.connection.password">password</property>
+
+        <property name="hibernate.dialect">org.hibernate.dialect.MySQL8Dialect</property>
+        <property name="hibernate.hbm2ddl.auto">update</property>
+        <property name="hibernate.show_sql">true</property>
+    </session-factory>
+</hibernate-configuration>
